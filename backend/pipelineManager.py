@@ -3,10 +3,16 @@ from typing import List
 
 from filter import Filter
 from filterDto import FilterDto
-from flask import g
 
 
 class PipelineManager:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(PipelineManager, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+    
     def __init__(self):
         self.filters = [] # List of filters
 
@@ -23,7 +29,3 @@ class PipelineManager:
         return pipe
     
     
-def pipeline_manager():
-    if 'pipeline_manager' not in g:
-        g.pipeline_manager = PipelineManager()
-    return g.pipeline_manager

@@ -1,11 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify,g
 
-from pipelineManager import pipeline_manager
-
+# Create a Blueprint for the routes
 api = Blueprint('api', __name__)
-
 def register_routes(app):
     app.register_blueprint(api)
+    
 
 @api.route('/')
 def home():
@@ -36,5 +35,4 @@ def process_data(planet_id, date):
             self.value = value
 
     filterDtos = [FilterDto(**item) for item in data]
-    return pipeline_manager().process(filterDtos, planet_id, date)
-
+    return g.pipeline_manager.process(filterDtos, planet_id, date)
