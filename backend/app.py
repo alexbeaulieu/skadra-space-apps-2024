@@ -1,4 +1,4 @@
-from cleanup.PipelineManager import PipelineManager
+from pipelineManager import PipelineManager
 from flask import Flask
 
 
