@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
-from filter import FilterParam
+from filters.filter import FilterParam
+
+
+
 @dataclass
 class FilterDto:
     name: str

@@ -3,8 +3,8 @@ import pandas as pd
 from unittest.mock import MagicMock
 
 from pipelineManager import PipelineManager
-from filter import Filter
-from filterDto import FilterDto
+from filters.filter import Filter
+from filters.filterDto import FilterDto
 
 
 def test_process_with_single_filter():
