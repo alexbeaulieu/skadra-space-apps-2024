@@ -4,12 +4,19 @@ from flask import Blueprint, request, jsonify, g
 import os
 import pandas as pd
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
 import io
 import base64
 
-
 from filters.filterDto import FilterDto
+
+matplotlib.use('Agg')
+
+dtFmt = mdates.DateFormatter('%H:%M') # define the plot date formatting
+
 
 # Create a Blueprint for the routes
 api = Blueprint('api', __name__)
@@ -85,16 +92,24 @@ def process_data(planet_name, date, algo_name):
         extrapolated_data = g.algo_manager.process(algo_name, cleaned_data)
         
         # generate the plot and send it back to the client
-        fig,ax = plt.subplots(1,1,figsize=(12,3))
-        for i in np.arange(0,len(extrapolated_data)):
-            triggers = extrapolated_data[i]
-            ax.axvline(x = tr_times[triggers[0]], color='red', label='Trig. On')
-            ax.axvline(x = tr_times[triggers[1]], color='purple', label='Trig. Off')
+        fig,ax = plt.subplots(2,1,figsize=(12,6), sharex=True, sharey=True)
+
+        data.plot(y="velocity", ax=ax[0], title="Raw data", legend=False)
+        ax[0].tick_params(axis='x',labelbottom='off')
+        ax[0].tick_params(axis='both' , direction='in', top=True, right=True)
+        ax[0].xaxis.set_major_formatter(dtFmt)  
+
+        cleaned_data.plot(y="velocity", ax=ax[1], title="Clean data", legend=False)
+        ax[1].tick_params(axis='both' , direction='in', top=True, right=True)
+        ax[1].set_xlabel("Time of the day")
+
+
+        # for i in np.arange(0,len(extrapolated_data)):
+        #     triggers = extrapolated_data[i]
+        #     ax.axvline(x = tr_times[triggers[0]], color='red', label='Trig. On')
+        #     ax.axvline(x = tr_times[triggers[1]], color='purple', label='Trig. Off')
         
-        # Plot seismogram
-        ax.plot(tr_times,tr_data)
-        ax.set_xlim([min(tr_times),max(tr_times)])
-        ax.legend()
+        
         # Save the plot to a buffer
         buf = io.BytesIO()
         fig.savefig(buf, format='png')

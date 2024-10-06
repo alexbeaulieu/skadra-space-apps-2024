@@ -19,22 +19,18 @@ def before_request():
 
 register_routes(app)
 
-# Start the Flask development server
-if __name__ == "__main__":
-    # register filters
-    pipeline_manager = PipelineManager()
-    bandpass_filter = BandpassFilter()
-    remove_peaks_filter = RemovePeaksFilter()
-    low_pass_filter = LowpassFilter()
-    
-    pipeline_manager.add_filter(remove_peaks_filter)
-    pipeline_manager.add_filter(bandpass_filter)
-    pipeline_manager.add_filter(low_pass_filter)
-    
+# register filters
+pipeline_manager = PipelineManager()
+bandpass_filter = BandpassFilter()
+remove_peaks_filter = RemovePeaksFilter()
+low_pass_filter = LowpassFilter()
 
-    # register algorithms
-    algo_manager = AlgorithmManager()
-    short_long_term_average_algo = ShortLongTermAverageAlgorithm()
-    algo_manager.add_algorithm(short_long_term_average_algo)
-    
-    app.run(debug=True)
+pipeline_manager.add_filter(remove_peaks_filter)
+pipeline_manager.add_filter(bandpass_filter)
+pipeline_manager.add_filter(low_pass_filter)
+
+
+# register algorithms
+algo_manager = AlgorithmManager()
+short_long_term_average_algo = ShortLongTermAverageAlgorithm()
+algo_manager.add_algorithm(short_long_term_average_algo)

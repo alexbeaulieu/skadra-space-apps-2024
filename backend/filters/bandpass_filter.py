@@ -19,6 +19,6 @@ class BandpassFilter(Filter):
         b, a = butter(params["order"], [params["min_value"], params["max_value"]], fs=fs, btype='band')
 
         data_out = data.copy()
-        data_out["velocity"] = lfilter(b, a, data["velocity"])
+        data_out["velocity"] = lfilter(b, a, data["velocity"].fillna(method='ffill'))
 
         return data_out
