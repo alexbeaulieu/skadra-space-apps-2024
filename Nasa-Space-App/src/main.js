@@ -8,13 +8,10 @@ import 'bootstrap-vue/dist/bootstrap-vue.css';
 
 import App from './App.vue'
 import router from './router'
-import vueAwesomeSidrebar from 'vue-awesome-sidebar'
-import 'vue-awesome-sidebar/dist/vue-awesome-sidebar.css'
 
 
 const app = createApp(App)
 
-app.use(vueAwesomeSidrebar)
 app.use(createPinia())
 app.use(router)
 
