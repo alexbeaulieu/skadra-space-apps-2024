@@ -3,6 +3,8 @@ from api.routes import register_routes
 from algorithms.algorithmManager import AlgorithmManager
 from algorithms.short_long_term_average_algo import ShortLongTermAverageAlgorithm
 from filters.bandpass_filter import BandpassFilter
+from filters.remove_peaks_filter import RemovePeaksFilter
+from filters.lowpass_filter import LowpassFilter
 from filters.pipelineManager import PipelineManager
 from flask import g
 from flask_cors import CORS
@@ -22,7 +24,12 @@ if __name__ == "__main__":
     # register filters
     pipeline_manager = PipelineManager()
     bandpass_filter = BandpassFilter()
+    remove_peaks_filter = RemovePeaksFilter()
+    low_pass_filter = LowpassFilter()
+    
+    pipeline_manager.add_filter(remove_peaks_filter)
     pipeline_manager.add_filter(bandpass_filter)
+    pipeline_manager.add_filter(low_pass_filter)
     
 
     # register algorithms

@@ -1,9 +1,9 @@
-from filters.filter import Filter, FilterParam
-from scipy.signal import butter, lfilter, filtfilt
+from filters.filter import Filter
+from scipy.signal import butter, lfilter
 
 class BandpassFilter(Filter):
     name = "Bandpass Filter"
-    params = FilterParam(
+    params = dict(
         active= True,
         bool_value= None,
         col_name= None,
@@ -11,15 +11,9 @@ class BandpassFilter(Filter):
         min_value= 0,
         order= 4,
     )
-    
-    def calc_sampling_freq(df):
-        t_s = df["velocity"].index.diff().median().total_seconds()
 
-        return 1/t_s
 
-    def process(self, data, params: FilterParam):
-        print(data)
-        #fs = self.calc_sampling_freq(data)
+    def process(self, data, params: dict):
         fs = 1/data["velocity"].index.diff().median().total_seconds()
 
         b, a = butter(params["order"], [params["min_value"], params["max_value"]], fs=fs, btype='band')
