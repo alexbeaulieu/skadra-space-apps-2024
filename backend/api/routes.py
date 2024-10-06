@@ -5,6 +5,8 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 from filters.filterDto import FilterDto
 
@@ -62,7 +64,6 @@ def process_data(planet_name, date, algo_name):
         req = request.json
         filterDtos = [FilterDto(**item) for item in req]
 
-        
         # Load the data
         data_directory = os.path.join(os.path.dirname(__file__), '..', 'data', planet_name)
         files  =  glob.glob(data_directory+"/**/*.parquet", recursive=True)
@@ -73,13 +74,16 @@ def process_data(planet_name, date, algo_name):
         
         cleaned_data = g.pipeline_manager.process(order = filterDtos, data =data)
         
+        tr = cleaned_data.copy()
+        print(f"options : {tr.index}")
+        tr_times = tr.index.to_numpy()
+        tr_data = tr['velocity'].to_numpy()
+        print("tr_times : " , tr_times)
+        print("tr_data : " , tr_data)
+        
         extrapolated_data = g.algo_manager.process(algo_name, cleaned_data)
         
-        tr = cleaned_data.traces[0].copy()
-        tr_times = tr.times()
-        tr_data = tr.data
-        
-        # TODO : like a matplotlib or something idk for debugging
+        # generate the plot and send it back to the client
         fig,ax = plt.subplots(1,1,figsize=(12,3))
         for i in np.arange(0,len(extrapolated_data)):
             triggers = extrapolated_data[i]
@@ -90,9 +94,11 @@ def process_data(planet_name, date, algo_name):
         ax.plot(tr_times,tr_data)
         ax.set_xlim([min(tr_times),max(tr_times)])
         ax.legend()
-        # end of temp visualization code
-        
-        return jsonify(extrapolated_data)
+        buf = BytesIO()
+        fig.savefig(buf, format="png")
+        # Embed the result in the html output.
+        data = base64.b64encode(buf.getbuffer()).decode("ascii")
+        return f"<img src='data:image/png;base64,{data}'/>"
     except FileNotFoundError:
         return jsonify({"error": "Data folder not found"}), 404
     except Exception as e:
