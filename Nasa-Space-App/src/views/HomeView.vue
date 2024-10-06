@@ -99,6 +99,27 @@ watch(selectedDate, async (newDate) => {
   }
 })
 
+watch(filters, async (newFilters) => {
+  const activeFilters = newFilters
+    .filter(filter => filter.active)
+    .map(({ active, ...rest }) => rest);
+
+  // Make sure to also check if `selectedDate` has a value before making the request
+  if (selectedDate.value) {
+    fetchWrapper
+      .post(
+        `${BASE_URL}/planets/${selectedPlanet.value}/${selectedDate.value}/${selectedAlgorithm.value.name}/`,
+        activeFilters
+      )
+      .then((data) => {
+        basePlot.value = data.plot_html;
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
+}, { deep: true });
+
 const gatherApiData = () => {
   // Mettre les requêtes API ici
   fetchWrapper
