@@ -5,8 +5,10 @@ from algorithms.short_long_term_average_algo import ShortLongTermAverageAlgorith
 from filters.bandpass_filter import BandpassFilter
 from filters.pipelineManager import PipelineManager
 from flask import g
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.before_request
 def before_request():
