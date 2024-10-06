@@ -1,73 +1,36 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { VueDraggableNext } from 'vue-draggable-next'
-import { fetchWrapper } from '@/helpers/fetch-wrapper';
+import { fetchWrapper } from '@/helpers/fetch-wrapper'
 
+const BASE_URL = 'http://127.0.0.1:5000'
+const planets = ref([])
+const selectedPlanet = ref(null)
+const dates = ref([])
+const selectedDate = ref(null)
+const algorithms = ref(null)
+const selectedAlgorithm = ref(null)
+const filters = ref([])
+const basePlot = ref(null)
 
 const currentPage = ref(1)
 const itemsPerPage = 9
-const items = [
-  '2024-01-01',
-  '2024-01-02',
-  '2024-01-03',
-  '2024-01-04',
-  '2024-01-05',
-  '2024-01-06',
-  '2024-01-07',
-  '2024-01-08',
-  '2024-01-09',
-  '2024-01-10',
-  '2024-01-11',
-  '2024-01-12'
-]
-const dico_filter_fully_filled = {
-  filter: {
-    up_number: 100,
-    down_number: 0,
-    bool: true,
-    string: 'asd'
-  }
-}
 
-const dico_filter_partially_filled = {
-  filter2: {
-    up_number: '',
-    down_number: null,
-    bool: true,
-    string: null
-  }
-}
-
-const dico_filter_not_filled = {
-  filter3: {
-    up_number: null,
-    down_number: null,
-    bool: null,
-    string: null
-  }
-}
-
-const list = ref([
-  { name: dico_filter_fully_filled, id: 1 },
-  { name: dico_filter_partially_filled, id: 2 },
-  { name: dico_filter_not_filled, id: 3 }
-])
-
-const totalPages = computed(() => Math.ceil(items.length / itemsPerPage))
+const totalPages = computed(() => Math.ceil(dates.value.length / itemsPerPage))
 
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
-  const slicedItems = items.slice(start, end)
+  const slicedItems = dates.value.slice(start, end)
   const rows = []
-  
+
   for (let i = 0; i < slicedItems.length; i += 3) {
     rows.push(slicedItems.slice(i, i + 3))
   }
 
   if (rows.length && rows[rows.length - 1].length < 3) {
     while (rows[rows.length - 1].length < 3) {
-      rows[rows.length - 1].push(null) 
+      rows[rows.length - 1].push(null)
     }
   }
 
@@ -80,47 +43,107 @@ const changePage = (page) => {
   }
 }
 
-const test = (item) => {
-  console.log('test', item)
+const updateFilterParam = (filterIndex, paramKey, newValue) => {
+  filters.value[filterIndex].params[paramKey] = newValue
 }
+
+const detectInputType = (value) => {
+  if (typeof value === 'number') {
+    return 'number'
+  } else if (Date.parse(value)) {
+    return 'date'
+  } else {
+    return 'text'
+  }
+}
+
+// Watch for changes to selectedPlanet and fetch dates
+watch(selectedPlanet, async (newPlanet) => {
+  if (newPlanet) {
+    fetchWrapper
+      .get(`${BASE_URL}/planets/${newPlanet}/dates/`)
+      .then((data) => {
+        dates.value = data
+      })
+      .catch((error) => {
+        console.error('Error:', error)
+      })
+  }
+})
+
+// watch for changes to selectedDate and trigger a computation for that date
+watch(selectedDate, async (newDate) => {
+  if (newDate) {
+    fetchWrapper
+      .post(
+        `${BASE_URL}/planets/${selectedPlanet.value}/${selectedDate.value}/${selectedAlgorithm.value.name}/`,
+        filters.value // TODO : voir si ça suffit pour prendre en compte l'ordre des filtres?
+      )
+      .then((data) => {
+        basePlot.value = data.plot_html
+      })
+      .catch((error) => {
+        console.error('Error:', error)
+      })
+  }
+})
 
 const gatherApiData = () => {
   // Mettre les requêtes API ici
+  fetchWrapper
+    .get(`${BASE_URL}/planets/`)
+    .then((data) => {
+      planets.value = data
+    })
+    .then(() => {
+      selectedPlanet.value = planets.value[0]
+    })
+    .catch((error) => {
+      console.error('Error:', error)
+    })
+
+  fetchWrapper
+    .get(`${BASE_URL}/filters/`)
+    .then((data) => {
+      filters.value = data
+    })
+    .catch((error) => {
+      console.error('Error:', error)
+    })
+
+  fetchWrapper
+    .get(`${BASE_URL}/algos/`)
+    .then((data) => {
+      algorithms.value = data
+    })
+    .then(() => {
+      selectedAlgorithm.value = algorithms.value[0]
+    })
+    .catch((error) => {
+      console.error('Error:', error)
+    })
 }
 
-
 onMounted(async () => {
-  gatherApiData()
+  await gatherApiData()
 })
 </script>
 
 <template>
   <div class="d-flex justify-content-left border border-black rounded w-50">
     <div class="m-3">
-      <h4>Select a Planet</h4>
+      <h4>Select an astral body</h4>
       <form>
-        <div class="form-check">
+        <div v-for="planet in planets" :key="planet" class="form-check">
           <input
             type="radio"
-            id="mars"
+            :id="planet"
             name="planet"
-            value="Mars"
+            :value="planet"
             v-model="selectedPlanet"
             class="form-check-input"
           />
-          <label for="mars" class="form-check-label">Mars 👽</label>
-        </div>
-
-        <div class="form-check">
-          <input
-            type="radio"
-            id="moon"
-            name="planet"
-            value="Moon"
-            v-model="selectedPlanet"
-            class="form-check-input"
-          />
-          <label for="moon" class="form-check-label">Moon 🌘</label>
+          <label :for="planet" class="form-check-label">{{ planet }}</label>
         </div>
       </form>
     </div>
@@ -129,7 +152,17 @@ onMounted(async () => {
       <table class="table table-bordered">
         <tbody>
           <tr v-for="(row, index) in paginatedRows" :key="index">
-            <td v-for="(item, idx) in row" :key="idx" class="clickable-cell"  @click="test(item)">{{ item || '—' }}</td>
+            <td
+              v-for="(item, idx) in row"
+              :key="idx"
+              :class="{
+                'clickable-cell': true,
+                'table-primary': selectedDate === item
+              }"
+              @click="selectedDate = item"
+            >
+              {{ item || '—' }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -137,7 +170,11 @@ onMounted(async () => {
       <nav>
         <ul class="pagination">
           <li class="page-item" :class="{ disabled: currentPage === 1 }">
-            <button class="page-link" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">
+            <button
+              class="page-link"
+              @click="changePage(currentPage - 1)"
+              :disabled="currentPage === 1"
+            >
               Previous
             </button>
           </li>
@@ -152,58 +189,60 @@ onMounted(async () => {
           </li>
 
           <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-            <button class="page-link" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">
+            <button
+              class="page-link"
+              @click="changePage(currentPage + 1)"
+              :disabled="currentPage === totalPages"
+            >
               Next
             </button>
           </li>
         </ul>
       </nav>
-
-   
-
-
-   
     </div>
   </div>
-  <div class="flex m-10">
-    <h4>Filters</h4>
-    <VueDraggableNext class="dragArea list-group w-full w-25" :list="list">
-      <div
-        class="list-group-item bg-gray m-1 p-3 rounded-md text-center flex items-center"
-        v-for="element in list"
-        :key="element.id"
-      >
-        <div v-for="(value, key) in element.name" :key="key">
-          <div>
-            <h6>{{ key }}</h6>
-            <!-- <input type="checkbox" class="mr-2" /> -->
+  <div class="flex-container">
+    <div class="data-cleaning flex-item w-full">
+      <div class="flex w-full">
+        <h4>Data cleaning</h4>
+        <VueDraggableNext class="dragArea list-group w-full w-full" v-model="filters">
+          <div
+            class="list-group-item bg-gray m-1 p-3 rounded-md text-center flex items-center w-full"
+            v-for="(filter, filterIndex) in filters"
+            :key="filter.name"
+          >
+            <h6>{{ filter.name }}</h6>
+            <div v-for="(value, key) in filter.params" :key="key">
+              <div
+                v-if="value !== null"
+                class="d-flex flex-row align-items-center justify-content-lg-between w-full"
+              >
+                <label :for="key" class="mr-2">{{ key }}</label>
+                <input
+                  :type="detectInputType(value)"
+                  class="form-control w-25"
+                  :id="key"
+                  v-model="filters[filterIndex].params[key]"
+                />
+              </div>
+            </div>
           </div>
-
-          <div v-if="value.up_number !== null" class="d-flex flex-column align-items-center">
-            <label for="up_number" class="mr-2">Up number:</label>
-            <input type="number" class="form-control w-25" :value="value.up_number" />
-          </div>
-          <div v-if="value.down_number !== null" class="d-flex flex-column align-items-center">
-            <label for="down_number" class="mr-2">Down number:</label>
-            <input type="number" class="form-control w-25" :value="value.down_number" />
-          </div>
-          <div v-if="value.bool !== null">
-            <label for="bool" class="mr-2">Bool:</label>
-            <input type="checkbox" class="form-check-input m-1" :checked="value.bool" />
-          </div>
-        </div>
+        </VueDraggableNext>
       </div>
-    </VueDraggableNext>
+    </div>
+    <div class="flex-item flex-box">
+      <div v-html="basePlot"></div>
+    </div>
   </div>
+
   <div class="mt-3">
-    <h4>Algorithms</h4>
+    <h4>Event identification algorithm</h4>
     <div class="form-group">
       <label for="algolist" class="mb-1"> Algorithm list: </label>
       <select name="algolist" id="algolist" class="form-control w-25">
-        <option value="algo1">algo1</option>
-        <option value="algo2">algo2</option>
-        <option value="algo3">algo3</option>
-        <option value="algo4">algo4</option>
+        <option v-for="algorithm in algorithms" :value="algorithm.name">
+          {{ algorithm.name }}
+        </option>
       </select>
     </div>
   </div>
@@ -217,5 +256,19 @@ onMounted(async () => {
 
 .clickable-cell:hover {
   background-color: rgb(222, 222, 222);
+}
+
+.flex-container {
+  display: flex;
+  height: 50vh; /* Half of the screen height */
+}
+
+.data-cleaning {
+  flex: 0 0 auto; /* Take its natural width */
+}
+
+.flex-box {
+  flex: 1; /* Take the remaining width */
+  border: 1px solid #000; /* Optional: Add a border for visual separation */
 }
 </style>

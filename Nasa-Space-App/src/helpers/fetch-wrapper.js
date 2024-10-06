@@ -12,7 +12,6 @@ function request(method, form = false) {
       method
     };
     
-    requestOptions.headers = headers
     if (form) {
       requestOptions.body = body;
     } else if (body) {

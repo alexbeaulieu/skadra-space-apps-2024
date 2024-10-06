@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
+import mpld3
 
 from filters.filterDto import FilterDto
 
@@ -94,11 +95,13 @@ def process_data(planet_name, date, algo_name):
         ax.plot(tr_times,tr_data)
         ax.set_xlim([min(tr_times),max(tr_times)])
         ax.legend()
-        buf = BytesIO()
-        fig.savefig(buf, format="png")
-        # Embed the result in the html output.
-        data = base64.b64encode(buf.getbuffer()).decode("ascii")
-        return f"<img src='data:image/png;base64,{data}'/>"
+        # Convert the matplotlib figure to HTML using mpld3
+        plot_html = mpld3.fig_to_html(fig)
+
+        # Optionally close the figure to free memory
+        plt.close(fig)
+
+        return jsonify({'plot_html': plot_html})
     except FileNotFoundError:
         return jsonify({"error": "Data folder not found"}), 404
     except Exception as e:
