@@ -4,11 +4,10 @@ from scipy.signal import butter, lfilter
 class BandpassFilter(Filter):
     name = "Bandpass Filter"
     params = dict(
-        active= True,
         bool_value= None,
         col_name= None,
-        max_value= 10,
-        min_value= 0,
+        max_value= 0.5,
+        min_value= 0.1,
         order= 4,
     )
 

@@ -12,11 +12,14 @@ const algorithms = ref(null)
 const selectedAlgorithm = ref(null)
 const filters = ref([])
 const basePlot = ref(null)
+const visibleMenus = ref([]);
+
 
 const currentPage = ref(1)
-const itemsPerPage = 9
+const itemsPerPage = 18
 
 const totalPages = computed(() => Math.ceil(dates.value.length / itemsPerPage))
+
 
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
@@ -24,8 +27,8 @@ const paginatedRows = computed(() => {
   const slicedItems = dates.value.slice(start, end)
   const rows = []
 
-  for (let i = 0; i < slicedItems.length; i += 3) {
-    rows.push(slicedItems.slice(i, i + 3))
+  for (let i = 0; i < slicedItems.length; i += 6) {
+    rows.push(slicedItems.slice(i, i + 6))
   }
 
   if (rows.length && rows[rows.length - 1].length < 3) {
@@ -36,6 +39,10 @@ const paginatedRows = computed(() => {
 
   return rows
 })
+
+const toggleMenu = (index) => {
+  visibleMenus.value[index] = !visibleMenus.value[index];
+}
 
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
@@ -73,11 +80,15 @@ watch(selectedPlanet, async (newPlanet) => {
 
 // watch for changes to selectedDate and trigger a computation for that date
 watch(selectedDate, async (newDate) => {
+  const activeFilters = filters.value
+    .filter(filter => filter.active) 
+    .map(({ active, ...rest }) => rest);
+
   if (newDate) {
     fetchWrapper
       .post(
         `${BASE_URL}/planets/${selectedPlanet.value}/${selectedDate.value}/${selectedAlgorithm.value.name}/`,
-        filters.value // TODO : voir si ça suffit pour prendre en compte l'ordre des filtres?
+        activeFilters
       )
       .then((data) => {
         basePlot.value = data.plot_html
@@ -130,19 +141,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="d-flex justify-content-left border border-black rounded w-50">
+  <div class="d-flex justify-content-left border border-black rounded w-100 mb-5">
     <div class="m-3">
       <h4>Select an astral body</h4>
       <form>
         <div v-for="planet in planets" :key="planet" class="form-check">
-          <input
-            type="radio"
-            :id="planet"
-            name="planet"
-            :value="planet"
-            v-model="selectedPlanet"
-            class="form-check-input"
-          />
+          <input type="radio" :id="planet" name="planet" :value="planet" v-model="selectedPlanet"
+            class="form-check-input" />
           <label :for="planet" class="form-check-label">{{ planet }}</label>
         </div>
       </form>
@@ -152,15 +157,10 @@ onMounted(async () => {
       <table class="table table-bordered">
         <tbody>
           <tr v-for="(row, index) in paginatedRows" :key="index">
-            <td
-              v-for="(item, idx) in row"
-              :key="idx"
-              :class="{
-                'clickable-cell': true,
-                'table-primary': selectedDate === item
-              }"
-              @click="selectedDate = item"
-            >
+            <td v-for="(item, idx) in row" :key="idx" :class="{
+              'clickable-cell': true,
+              'table-primary': selectedDate === item
+            }" @click="selectedDate = item">
               {{ item || '—' }}
             </td>
           </tr>
@@ -170,82 +170,67 @@ onMounted(async () => {
       <nav>
         <ul class="pagination">
           <li class="page-item" :class="{ disabled: currentPage === 1 }">
-            <button
-              class="page-link"
-              @click="changePage(currentPage - 1)"
-              :disabled="currentPage === 1"
-            >
+            <button class="page-link" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">
               Previous
             </button>
           </li>
 
-          <li
-            class="page-item"
-            v-for="page in totalPages"
-            :key="page"
-            :class="{ active: currentPage === page }"
-          >
+          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }">
             <button class="page-link" @click="changePage(page)">{{ page }}</button>
           </li>
 
           <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-            <button
-              class="page-link"
-              @click="changePage(currentPage + 1)"
-              :disabled="currentPage === totalPages"
-            >
+            <button class="page-link" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">
               Next
             </button>
           </li>
         </ul>
       </nav>
     </div>
+    <div class="m-3">
+      <h4>Event identification algorithm</h4>
+      <div class="form-group">
+        <label for="algolist" class="mb-1"> Algorithm list: </label>
+        <select name="algolist" id="algolist" class="form-control w-75">
+          <option v-for="algorithm in algorithms" :value="algorithm.name">
+            {{ algorithm.name }}
+          </option>
+        </select>
+      </div>
+    </div>
   </div>
   <div class="flex-container">
     <div class="data-cleaning flex-item w-full">
       <div class="flex w-full">
-        <h4>Data cleaning</h4>
+        <h4 class="text-center">Data cleaning</h4>
         <VueDraggableNext class="dragArea list-group w-full w-full" v-model="filters">
-          <div
-            class="list-group-item bg-gray m-1 p-3 rounded-md text-center flex items-center w-full"
-            v-for="(filter, filterIndex) in filters"
-            :key="filter.name"
-          >
-            <h6>{{ filter.name }}</h6>
-            <div v-for="(value, key) in filter.params" :key="key">
-              <div
-                v-if="value !== null"
-                class="d-flex flex-row align-items-center justify-content-lg-between w-full"
-              >
-                <label :for="key" class="mr-2">{{ key }}</label>
-                <input
-                  :type="detectInputType(value)"
-                  class="form-control w-25"
-                  :id="key"
-                  v-model="filters[filterIndex].params[key]"
-                />
-              </div>
+          <div class="list-group-item bg-gray m-1 p-3 rounded-md text-center flex items-center w-full"
+            v-for="(filter, filterIndex) in filters" :key="filter.name">
+            <div class="form-check form-switch d-flex justify-content-center">
+              <h6>{{ filter.name }}</h6>
+              <input class="form-check-input" type="checkbox" :id="filter.name" v-model="filter.active">
             </div>
+            <transition name="fade">
+              <div v-if="filter.active">
+                <div v-for="(value, key) in filter.params" :key="key">
+                  <div v-if="value !== null" class="d-flex flex-row align-items-center justify-content-lg-between w-full">
+                    <label :for="key" class="mr-2">{{ key }}</label>
+                    <input :type="detectInputType(value)" class="form-control w-25" :id="key"
+                      v-model="filters[filterIndex].params[key]" />
+                  </div>
+                </div>
+              </div>
+            </transition>
           </div>
         </VueDraggableNext>
       </div>
     </div>
-    <div class="flex-item flex-box">
+    <div class="flex-item flex-box mt-5">
       <img :src="'data:image/png;base64,' + basePlot" alt="Plot Image" v-if="basePlot" />
     </div>
   </div>
 
-  <div class="mt-3">
-    <h4>Event identification algorithm</h4>
-    <div class="form-group">
-      <label for="algolist" class="mb-1"> Algorithm list: </label>
-      <select name="algolist" id="algolist" class="form-control w-25">
-        <option v-for="algorithm in algorithms" :value="algorithm.name">
-          {{ algorithm.name }}
-        </option>
-      </select>
-    </div>
-  </div>
+
 </template>
 
 <style scoped>
@@ -260,15 +245,31 @@ onMounted(async () => {
 
 .flex-container {
   display: flex;
-  height: 50vh; /* Half of the screen height */
+  height: 50vh;
+  /* Half of the screen height */
 }
 
 .data-cleaning {
-  flex: 0 0 auto; /* Take its natural width */
+  flex: 0 0 auto;
+  /* Take its natural width */
 }
 
 .flex-box {
-  flex: 1; /* Take the remaining width */
-  border: 1px solid #000; /* Optional: Add a border for visual separation */
+  flex: 1;
+  /* Take the remaining width */
+  border: 1px solid #000;
+  /* Optional: Add a border for visual separation */
+}
+
+.form-check-input {
+  margin-left: 10px;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease; 
+}
+
+.fade-enter, .fade-leave-to {
+  opacity: 0; 
 }
 </style>
