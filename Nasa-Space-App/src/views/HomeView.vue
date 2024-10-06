@@ -231,7 +231,7 @@ onMounted(async () => {
       </div>
     </div>
     <div class="flex-item flex-box">
-      <div v-html="basePlot"></div>
+      <img :src="'data:image/png;base64,' + basePlot" alt="Plot Image" v-if="basePlot" />
     </div>
   </div>
 
