@@ -6,6 +6,7 @@ from filters.bandpass_filter import BandpassFilter
 from filters.remove_peaks_filter import RemovePeaksFilter
 from filters.lowpass_filter import LowpassFilter
 from filters.pipelineManager import PipelineManager
+from filters.highpass_filter import HighpassFilter
 from flask import g
 from flask_cors import CORS
 
@@ -19,15 +20,22 @@ def before_request():
 
 register_routes(app)
 
+# Start the Flask development server
+
 # register filters
 pipeline_manager = PipelineManager()
 bandpass_filter = BandpassFilter()
 remove_peaks_filter = RemovePeaksFilter()
 low_pass_filter = LowpassFilter()
+high_pass_filter = HighpassFilter()
+
 
 pipeline_manager.add_filter(remove_peaks_filter)
 pipeline_manager.add_filter(bandpass_filter)
 pipeline_manager.add_filter(low_pass_filter)
+pipeline_manager.add_filter(high_pass_filter)
+    
+
 
 
 # register algorithms

@@ -4,8 +4,7 @@ from obspy.signal.filter import  highpass
 class HighpassFilter(Filter):
     name = "Highpass Filter"
     params = dict(
-        active= True,
-        frequency= 10,
+        frequency=0.1,
         filter_order= 4,
         zerophase=0
     )

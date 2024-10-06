@@ -4,12 +4,11 @@ from scipy.signal import find_peaks
 class RemovePeaksFilter(Filter):
     name = "Remove Peaks"
     params = dict(
-        active= True,
-        prominence_valley_time=0,
+        prominence_valley_time=15,
         width_time_min=0,
-        width_time_max=0,
-        distance_time=0,
-        prominence_percent=0
+        width_time_max=15,
+        distance_time=1,
+        prominence_percent=60
     )
     
     def process(self, data, params: dict):
