@@ -225,7 +225,7 @@ onMounted(async () => {
       <div class="flex w-full">
         <h4 class="text-center">Data cleaning</h4>
         <VueDraggableNext class="dragArea list-group w-full w-full" v-model="filters">
-          <div class="list-group-item bg-gray m-1 p-3 rounded-md text-center flex items-center w-full"
+          <div class="list-group-item bg-gray m-1 p-3 rounded-md text-center flex items-center page"
             v-for="(filter, filterIndex) in filters" :key="filter.name">
             <div class="form-check form-switch d-flex justify-content-center">
               <h6>{{ filter.name }}</h6>
@@ -292,5 +292,9 @@ onMounted(async () => {
 
 .fade-enter, .fade-leave-to {
   opacity: 0; 
+}
+
+.page{
+  width: 300px;
 }
 </style>
