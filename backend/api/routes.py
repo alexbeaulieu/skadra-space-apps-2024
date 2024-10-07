@@ -91,24 +91,39 @@ def process_data(planet_name, date, algo_name):
         
         extrapolated_data = g.algo_manager.process(algo_name, cleaned_data)
         
-        # generate the plot and send it back to the client
+
         fig,ax = plt.subplots(2,1,figsize=(12,6), sharex=True, sharey=True)
 
-        data.plot(y="velocity", ax=ax[0], title="Raw data", legend=False)
+        # Generate the plot and send it back to the client
+        # Show raw data
+        data.plot(y="velocity", ax=ax[0], title="Raw data", label='_Hidden')
         ax[0].tick_params(axis='x',labelbottom='off')
         ax[0].tick_params(axis='both' , direction='in', top=True, right=True)
-        ax[0].xaxis.set_major_formatter(dtFmt)  
+        ax[0].xaxis.set_major_formatter(dtFmt)
 
+
+        # Show filtered data
         cleaned_data.plot(y="velocity", ax=ax[1], title="Clean data", legend=False)
-        ax[1].tick_params(axis='both' , direction='in', top=True, right=True)
+        ax[1].tick_params(axis='both' , direction='in', top=True, right=True) 
+
+
+        # Add detections
+        qtimes = data["mq_type_id"].dropna().index
+        qtypes = data["mq_type_id"].dropna().values
+        for i, (qtime, qtype) in enumerate(zip(qtimes, qtypes)):
+            ax[0].axvline(x=qtime, c="red", label= "True quake" if i==0  else "_Hidden")
+            ax[1].axvline(x=qtime, c="red", label= "True quake" if i==0  else "_Hidden")
+
+
+        tr_times = data.index.values
+        for i,e in enumerate(extrapolated_data):
+            ax[0].axvline(x=tr_times[e][0], c="gray", ls=":", marker='d', markerfacecolor='black', markeredgecolor='black', label= "Detected quake" if i==0  else "_Hidden")
+            ax[1].axvline(x=tr_times[e][0], c="gray", ls=":", marker='d', markerfacecolor='black', markeredgecolor='black', label= "Detected quake" if i==0  else "_Hidden")
+
+
+
+        ax[0].legend(loc='lower left')
         ax[1].set_xlabel("Time of the day")
-
-
-        # for i in np.arange(0,len(extrapolated_data)):
-        #     triggers = extrapolated_data[i]
-        #     ax.axvline(x = tr_times[triggers[0]], color='red', label='Trig. On')
-        #     ax.axvline(x = tr_times[triggers[1]], color='purple', label='Trig. Off')
-        
         
         # Save the plot to a buffer
         buf = io.BytesIO()
